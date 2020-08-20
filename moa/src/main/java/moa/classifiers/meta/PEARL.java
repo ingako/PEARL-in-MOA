@@ -37,8 +37,7 @@ import moa.core.MiscUtils;
 import moa.evaluation.BasicClassificationPerformanceEvaluator;
 import moa.options.ClassOption;
 
-import java.util.ArrayList;
-import java.util.Collection;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -125,7 +124,10 @@ public class PEARL extends AbstractClassifier implements MultiClassClassifier,
     protected BasicClassificationPerformanceEvaluator evaluator;
 
     private ExecutorService executor;
-    
+
+    // PEARL data structures
+    protected ArrayDeque<LRUState> stateQueue = new ArrayDeque<>();
+
     @Override
     public void resetLearningImpl() {
         // Reset attributes
@@ -455,6 +457,110 @@ public class PEARL extends AbstractClassifier implements MultiClassClassifier,
         public Integer call() throws Exception {
             run();
             return 0;
+        }
+    }
+
+    protected class LRUState {
+
+        class State {
+            SortedSet<Integer> pattern;
+            public int freq;
+
+            State(SortedSet<Integer> pattern, int freq) {
+                this.pattern = pattern;
+                this.freq = freq;
+            }
+        }
+
+        int capacity;
+        int editDistanceThreshold;
+        LinkedHashMap<String, State> map;
+
+        protected LRUState(int capacity, int editDistanceThreshold) {
+            this.capacity = capacity;
+            this.editDistanceThreshold = editDistanceThreshold;
+            this.map = new LinkedHashMap<String, State>(capacity, 0.75f, true){
+                protected boolean removeEldestEntry(Map.Entry eldest) {
+                    return size() > capacity;
+                }
+            };}
+
+        Set<Integer> getClosestState(Set<Integer> targetPattern, Set<Integer> idsToExclude) {
+            int minEditDistance = Integer.MAX_VALUE;
+            int maxFreq = 0;
+            Set<Integer> closestPattern = new HashSet<>();
+
+            // find the smallest edit distance
+            for (Map.Entry<String, State> entry : map.entrySet()) {
+                State curState = entry.getValue();
+                Set<Integer> curPattern = curState.pattern;
+
+                int curFreq = curState.freq;
+                int curEditDistance = 0;
+
+                boolean updateFlag = true;
+                for (int id : idsToExclude) {
+                    if (curPattern.contains(id)) {
+                        // tree with drift must be unset
+                        updateFlag = false;
+                        break;
+                    }
+                }
+
+                if (updateFlag) {
+                    for (int id : targetPattern) {
+                        if (!curPattern.contains(id)) {
+                            curEditDistance++;
+                        }
+
+                        if (curEditDistance > editDistanceThreshold
+                                || curEditDistance > minEditDistance) {
+                            updateFlag = false;
+                            break;
+                        }
+                    }
+                }
+
+                if (!updateFlag) {
+                    continue;
+                }
+
+                if (minEditDistance == curEditDistance && curFreq < maxFreq) {
+                    continue;
+                }
+
+                minEditDistance = curEditDistance;
+                maxFreq = curFreq;
+                closestPattern = curPattern;
+            }
+
+            return closestPattern;
+        }
+
+        void enqueue(SortedSet<Integer> pattern) {
+            String key = patternToKey(pattern);
+
+            if (map.containsKey(key)) {
+                State state = map.get(key);
+                state.freq++;
+
+            } else {
+                map.put(key, new State(pattern, 1));
+            }
+        }
+
+        String patternToKey(SortedSet<Integer> pattern) {
+            StringBuilder sb = new StringBuilder();
+            for (int i : pattern) {
+                sb.append(i);
+                sb.append(",");
+            }
+
+            return sb.toString();
+        }
+
+        public String toString() {
+            return "";
         }
     }
 }
