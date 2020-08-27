@@ -186,10 +186,11 @@ public class PEARL extends AbstractClassifier implements MultiClassClassifier,
 
         ArrayList<Integer> warningTreePosList = new ArrayList<>();
         ArrayList<Integer> driftedTreePosList = new ArrayList<>();
-        this.actualLabels.add((int) instance.classValue());
-        if (this.actualLabels.size() > this.performanceEvalWindowSize.getValue()) {
+
+        if (this.actualLabels.size() >= this.performanceEvalWindowSize.getValue()) {
             this.actualLabels.remove(0);
         }
+        this.actualLabels.add((int) instance.classValue());
 
         Collection<TrainingRunnable> trainers = new ArrayList<TrainingRunnable>();
         for (int i = 0 ; i < this.ensemble.length ; i++) {
@@ -222,10 +223,10 @@ public class PEARL extends AbstractClassifier implements MultiClassClassifier,
 
         for (ARFBaseLearner tree : this.candidateTrees) {
             // candidateTrees performs predictions to keep track of performance
-            tree.predictedLabelsWindow.add(tree.classifier.getPredictedClass(instance));
-            if (tree.predictedLabelsWindow.size() > performanceEvalWindowSize.getValue()) {
+            if (tree.predictedLabelsWindow.size() >=  performanceEvalWindowSize.getValue()) {
                 tree.predictedLabelsWindow.remove(0);
             }
+            tree.predictedLabelsWindow.add(tree.classifier.getPredictedClass(instance));
         }
 
         if (warningTreePosList.size() > 0) {
@@ -396,7 +397,7 @@ public class PEARL extends AbstractClassifier implements MultiClassClassifier,
                 }
 
                 if (add_to_repo) {
-                    swap_tree.reset(true);
+                    swap_tree.reset(false);
 
                     // assign a new tree_pool_id for background tree
                     // and allocate a slot for background tree in tree_pool
@@ -514,7 +515,7 @@ public class PEARL extends AbstractClassifier implements MultiClassClassifier,
         if(this.subspaceSize > n)
             this.subspaceSize = n;
 
-        this.stateQueue = new LRUState(100000000, this.editDistanceOption.getValue());
+        this.stateQueue = new LRUState(10000000, this.editDistanceOption.getValue());
 
         this.stateGraph = new LossyStateGraph(this.treeRepoSizeOption.getValue(),
                                               this.lossyWindowSizeSizeOption.getValue());
@@ -526,6 +527,9 @@ public class PEARL extends AbstractClassifier implements MultiClassClassifier,
         treeLearner.resetLearning();
 
         for (int i = 0; i < ensembleSize; ++i) {
+            // treeLearner.setRandomSeed(this.classifierRandom.nextInt());
+            // treeLearner.resetClassifierRandom();
+
             treeLearner.subspaceSizeOption.setValue(this.subspaceSize);
             this.ensemble[i] = new ARFBaseLearner(
                 i,
@@ -651,6 +655,8 @@ public class PEARL extends AbstractClassifier implements MultiClassClassifier,
         public ARFBaseLearner makeTree(int treeId) {
             ARFHoeffdingTree bkgClassifier = (ARFHoeffdingTree) this.classifier.copy();
             bkgClassifier.resetLearning();
+            // bkgClassifier.setRandomSeed(this.classifier.classifierRandom.nextInt());
+            // bkgClassifier.resetClassifierRandom();
             BasicClassificationPerformanceEvaluator bkgEvaluator = (BasicClassificationPerformanceEvaluator) this.evaluator.copy();
             bkgEvaluator.reset();
             ARFBaseLearner newTree = new ARFBaseLearner(this.indexOriginal, bkgClassifier, bkgEvaluator, instancesSeen,
@@ -667,7 +673,7 @@ public class PEARL extends AbstractClassifier implements MultiClassClassifier,
             // train bg tree and track its performance
             if (this.bkgLearner != null) {
                 this.bkgLearner.classifier.trainOnInstance(instance);
-                int prediction =  Utils.maxIndex(this.bkgLearner.getVotesForInstance(instance));
+                int prediction = this.bkgLearner.classifier.getPredictedClass(instance);
                 if (this.bkgLearner.predictedLabelsWindow.size() >= performanceEvalWindowSize.getValue()) {
                     this.bkgLearner.predictedLabelsWindow.remove(0);
                 }
@@ -708,7 +714,9 @@ public class PEARL extends AbstractClassifier implements MultiClassClassifier,
                         // Create a new bkgLearner object
                         this.bkgLearner = new ARFBaseLearner(indexOriginal, bkgClassifier, bkgEvaluator, instancesSeen,
                             this.useBkgLearner, this.useDriftDetector, this.driftOption, this.warningOption, true);
-                        
+                        // this.bkgLearner.classifier.setRandomSeed(this.classifier.classifierRandom.nextInt());
+                        // this.bkgLearner.classifier.resetClassifierRandom();
+
                         // Update the warning detection object for the current object 
                         // (this effectively resets changes made to the object while it was still a bkg learner). 
                         this.warningDetectionMethod = ((ChangeDetector) getPreparedClassOption(this.warningOption)).copy();
@@ -873,7 +881,7 @@ public class PEARL extends AbstractClassifier implements MultiClassClassifier,
                 if (updateFlag) {
                     for (int id : targetPattern) {
                         if (!curPattern.contains(id)) {
-                            curEditDistance++;
+                            curEditDistance += 2;
                         }
 
                         if (curEditDistance > editDistanceThreshold
@@ -963,7 +971,7 @@ public class PEARL extends AbstractClassifier implements MultiClassClassifier,
         Random mrand;
 
         int drifted_tree_counter = 0;
-        boolean is_stable;
+        boolean is_stable = false;
 
         LossyStateGraph(int capacity, int window_size) {
             this.capacity = capacity;
