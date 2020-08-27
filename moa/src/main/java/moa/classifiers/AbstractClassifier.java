@@ -166,6 +166,10 @@ public abstract class AbstractClassifier extends AbstractOptionHandler
         resetLearningImpl();
     }
 
+    public void resetClassifierRandom() {
+        this.classifierRandom = new Random(this.randomSeed);
+    }
+
     @Override
     public void trainOnInstance(Instance inst) {
         boolean isTraining = (inst.weight() > 0.0);
@@ -252,6 +256,10 @@ public abstract class AbstractClassifier extends AbstractOptionHandler
     @Override
     public boolean correctlyClassifies(Instance inst) {
         return Utils.maxIndex(getVotesForInstance(inst)) == (int) inst.classValue();
+    }
+
+    public int getPredictedClass(Instance inst) {
+        return Utils.maxIndex(getVotesForInstance(inst));
     }
 
     /**
