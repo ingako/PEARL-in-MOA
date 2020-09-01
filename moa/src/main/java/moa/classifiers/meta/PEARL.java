@@ -76,7 +76,7 @@ public class PEARL extends AbstractClassifier implements MultiClassClassifier,
             "ARFHoeffdingTree -e 2000000 -g 50 -c 0.01");
 
     public IntOption ensembleSizeOption = new IntOption("ensembleSize", 's',
-        "The number of trees.", 60, 1, Integer.MAX_VALUE);
+        "The number of trees.", 10, 1, Integer.MAX_VALUE);
 
     public MultiChoiceOption mFeaturesModeOption = new MultiChoiceOption("mFeaturesMode", 'o',
         "Defines how m, defined by mFeaturesPerTreeSize, is interpreted. M represents the total number of features.",
@@ -119,6 +119,9 @@ public class PEARL extends AbstractClassifier implements MultiClassClassifier,
 
     public IntOption editDistanceOption = new IntOption("editDistance", 'e',
             "The edit distance parameter for tree swapping", 100, 60, 120);
+
+    public IntOption lruQueueSize = new IntOption("lruQueueSize", 'f',
+            "The size of LRU state queue", 10000000, 100, Integer.MAX_VALUE);
 
     public IntOption performanceEvalWindowSize = new IntOption("performanceEvalWindowSize", 'z',
             "The window size for tracking candidate trees' performance",50, 1, Integer.MAX_VALUE);
@@ -515,7 +518,7 @@ public class PEARL extends AbstractClassifier implements MultiClassClassifier,
         if(this.subspaceSize > n)
             this.subspaceSize = n;
 
-        this.stateQueue = new LRUState(10000000, this.editDistanceOption.getValue());
+        this.stateQueue = new LRUState(lruQueueSize.getValue(), this.editDistanceOption.getValue());
 
         this.stateGraph = new LossyStateGraph(this.treeRepoSizeOption.getValue(),
                                               this.lossyWindowSizeSizeOption.getValue());
@@ -562,7 +565,7 @@ public class PEARL extends AbstractClassifier implements MultiClassClassifier,
      * Inner class that represents a single tree member of the forest.
      * It contains some analysis information, such as the numberOfDriftsDetected,
      */
-    protected final class ARFBaseLearner extends AbstractMOAObject {
+    protected final class ARFBaseLearner { // extends AbstractMOAObject {
         public int indexOriginal;
         public long createdOn;
         public long lastDriftOn;
@@ -796,9 +799,9 @@ public class PEARL extends AbstractClassifier implements MultiClassClassifier,
             return vote.getArrayRef();
         }
 
-        @Override
-        public void getDescription(StringBuilder sb, int indent) {
-        }
+        // @Override
+        // public void getDescription(StringBuilder sb, int indent) {
+        // }
     }
 
     /***
