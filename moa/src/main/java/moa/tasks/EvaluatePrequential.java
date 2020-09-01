@@ -213,9 +213,9 @@ public class EvaluatePrequential extends ClassificationMainTask implements Capab
                 long evaluateTime = TimingUtils.getNanoCPUTimeOfCurrentThread();
                 double time = TimingUtils.nanoTimeToSeconds(evaluateTime - evaluateStartTime);
                 double timeIncrement = TimingUtils.nanoTimeToSeconds(evaluateTime - lastEvaluateStartTime);
-                double RAMHoursIncrement = learner.measureByteSize() / (1024.0 * 1024.0 * 1024.0); //GBs
-                RAMHoursIncrement *= (timeIncrement / 3600.0); //Hours
-                RAMHours += RAMHoursIncrement;
+                // double RAMHoursIncrement = learner.measureByteSize() / (1024.0 * 1024.0 * 1024.0); //GBs
+                // RAMHoursIncrement *= (timeIncrement / 3600.0); //Hours
+                // RAMHours += RAMHoursIncrement;
                 lastEvaluateStartTime = evaluateTime;
                 learningCurve.insertEntry(new LearningEvaluation(
                         new Measurement[]{
@@ -226,10 +226,10 @@ public class EvaluatePrequential extends ClassificationMainTask implements Capab
                             "evaluation time ("
                             + (preciseCPUTiming ? "cpu "
                             : "") + "seconds)",
-                            time),
-                            new Measurement(
-                            "model cost (RAM-Hours)",
-                            RAMHours)
+                            time)
+                            // new Measurement(
+                            // "model cost (RAM-Hours)",
+                            // RAMHours)
                         },
                         evaluator, learner));
 
