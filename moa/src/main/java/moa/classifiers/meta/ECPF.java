@@ -82,7 +82,16 @@ public class ECPF extends AbstractCPF implements MultiClassClassifier, Capabilit
     int modelsFaded = 0;
     
     public static final int DDM_BUILD_BUFFER = 3;
-    
+
+	@Override
+	public int getClassifierPoolSize() {
+		if (classifier instanceof AdaptiveRandomForest) {
+			return this.currentModels * ((AdaptiveRandomForest) classifier).ensembleSizeOption.getValue();
+		} else {
+			return this.currentModels;
+		}
+	}
+
 	@Override
 	public void resetLearningImpl() {
 	

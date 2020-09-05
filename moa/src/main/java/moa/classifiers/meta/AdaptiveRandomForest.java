@@ -165,6 +165,11 @@ public class AdaptiveRandomForest extends AbstractClassifier implements MultiCla
     }
 
     @Override
+    public int getClassifierPoolSize() {
+        return this.ensembleSizeOption.getValue();
+    }
+
+    @Override
     public void trainOnInstanceImpl(Instance instance) {
         ++this.instancesSeen;
         if(this.ensemble == null) 

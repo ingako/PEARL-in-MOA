@@ -85,7 +85,12 @@ public class DiversityPool extends AbstractClassifier implements MultiClassClass
     protected double changeDetected;
     
     protected List<Instance> testChunk;
-    
+
+	@Override
+	public int getClassifierPoolSize() {
+		return poolSizeOption.getValue();
+	}
+
 	@Override
 	public String getPurposeString() {
 		return "A classifier that can learn with recurring concept drift data stream.";

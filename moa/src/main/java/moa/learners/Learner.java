@@ -102,6 +102,14 @@ public interface Learner<E extends Example> extends MOAObject, OptionHandler, AW
      */
     public Measurement[] getModelMeasurements();
 
+
+    /**
+     * Get size of classifier pool.
+     *
+     * @return size of classifier pool
+     */
+    public int getClassifierPoolSize();
+
     /**
      * Gets the learners of this ensemble.
      * Returns null if this learner is a single learner.

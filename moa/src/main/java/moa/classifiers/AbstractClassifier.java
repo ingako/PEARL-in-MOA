@@ -184,6 +184,11 @@ public abstract class AbstractClassifier extends AbstractOptionHandler
     }
 
     @Override
+    public int getClassifierPoolSize() {
+        return 0;
+    }
+
+    @Override
     public Measurement[] getModelMeasurements() {
         List<Measurement> measurementList = new LinkedList<Measurement>();
         measurementList.add(new Measurement("model training instances",
@@ -194,6 +199,9 @@ public abstract class AbstractClassifier extends AbstractOptionHandler
         //         measureByteSize()));
         measurementList.add(new Measurement("model serialized size (bytes)",
                 0));
+
+        measurementList.add(new Measurement("classifier pool size",
+                getClassifierPoolSize()));
 
         Measurement[] modelMeasurements = getModelMeasurementsImpl();
         if (modelMeasurements != null) {

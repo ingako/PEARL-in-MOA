@@ -162,6 +162,11 @@ public class PEARL extends AbstractClassifier implements MultiClassClassifier,
     protected StateGraphSwitch graphSwitch;
 
     @Override
+    public int getClassifierPoolSize() {
+        return treePool.size();
+    }
+
+    @Override
     public void resetLearningImpl() {
         // Reset attributes
         this.ensemble = null;
